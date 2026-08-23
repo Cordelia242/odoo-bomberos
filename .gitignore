@@ -1,0 +1,10 @@
+deploy/.env
+deploy/runtime/
+deploy/backups/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.venv/
+.idea/
+.vscode/
+.DS_Store

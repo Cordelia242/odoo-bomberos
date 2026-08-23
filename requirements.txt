@@ -1,0 +1,2 @@
+# Pin Python dependencies required by custom addons here.
+# Example: openpyxl==3.1.5

@@ -1,0 +1,129 @@
+name: Deploy production
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      install_modules:
+        description: Comma-separated modules to force-install
+        required: false
+        default: ""
+      update_modules:
+        description: Comma-separated modules to force-update
+        required: false
+        default: ""
+
+concurrency:
+  group: odoo-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/odoo-bomberos
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      install_modules: ${{ steps.modules.outputs.install }}
+      update_modules: ${{ steps.modules.outputs.update }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install CI dependencies
+        run: python -m pip install --disable-pip-version-check pytest pyyaml
+
+      - name: Validate
+        run: |
+          python -m compileall -q scripts addons
+          python scripts/validate_addons.py
+          python -m pytest -q
+          find deploy -maxdepth 1 -name '*.sh' -print0 | xargs -0 -n1 bash -n
+
+      - name: Detect addon changes
+        id: modules
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "install=${{ inputs.install_modules }}" >> "$GITHUB_OUTPUT"
+            echo "update=${{ inputs.update_modules }}" >> "$GITHUB_OUTPUT"
+          else
+            BEFORE="${{ github.event.before }}"
+            if [[ "$BEFORE" =~ ^0+$ ]]; then
+              BEFORE="$(git hash-object -t tree /dev/null)"
+            fi
+            eval "$(python scripts/changed_modules.py "$BEFORE" "$GITHUB_SHA")"
+            echo "install=$INSTALL_MODULES" >> "$GITHUB_OUTPUT"
+            echo "update=$UPDATE_MODULES" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set image reference
+        id: image
+        run: |
+          IMAGE="$(echo "${REGISTRY}/${IMAGE_NAME}:sha-${GITHUB_SHA}" | tr '[:upper:]' '[:lower:]')"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          build-args: ODOO_BASE_IMAGE=odoo:19.0-20260817
+          tags: ${{ steps.image.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy deployment bundle
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          tar --exclude='deploy/.env' --exclude='deploy/runtime' --exclude='deploy/backups' -czf - deploy | \
+          ssh -p "${SERVER_PORT:-22}" "${SERVER_USER}@${SERVER_HOST}" \
+          'mkdir -p /opt/odoo-bomberos && tar xzf - -C /opt/odoo-bomberos --strip-components=1'
+
+      - name: Deploy exact image
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          ODOO_IMAGE: ${{ needs.build.outputs.image }}
+          INSTALL_MODULES: ${{ needs.build.outputs.install_modules }}
+          UPDATE_MODULES: ${{ needs.build.outputs.update_modules }}
+        run: |
+          ssh -p "${SERVER_PORT:-22}" "${SERVER_USER}@${SERVER_HOST}" \
+          "cd /opt/odoo-bomberos && ODOO_IMAGE='${ODOO_IMAGE}' INSTALL_MODULES='${INSTALL_MODULES}' UPDATE_MODULES='${UPDATE_MODULES}' ./deploy.sh"
