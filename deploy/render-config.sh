@@ -10,27 +10,35 @@ POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 : "${POSTGRES_PASSWORD:?required}"
 : "${ODOO_DB:?required}"
 
-for name in ODOO_ADMIN_PASSWORD POSTGRES_HOST POSTGRES_USER POSTGRES_PASSWORD ODOO_DB; do
-  value="${!name}"
-  if [[ ! "$value" =~ ^[A-Za-z0-9._~@%+=:-]+$ ]]; then
-    echo "$name contains unsupported characters" >&2
-    exit 1
-  fi
-done
-
 if [[ ! "$POSTGRES_PORT" =~ ^[0-9]+$ ]]; then
   echo "POSTGRES_PORT must be numeric" >&2
   exit 1
 fi
 
+# Secrets may legitimately contain symbols. Escape only the characters that
+# have special meaning in the sed replacement expression.
+sed_escape() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//&/\\&}"
+  value="${value//|/\\|}"
+  printf '%s' "$value"
+}
+
+ODOO_ADMIN_PASSWORD_ESCAPED="$(sed_escape "$ODOO_ADMIN_PASSWORD")"
+POSTGRES_HOST_ESCAPED="$(sed_escape "$POSTGRES_HOST")"
+POSTGRES_USER_ESCAPED="$(sed_escape "$POSTGRES_USER")"
+POSTGRES_PASSWORD_ESCAPED="$(sed_escape "$POSTGRES_PASSWORD")"
+ODOO_DB_ESCAPED="$(sed_escape "$ODOO_DB")"
+
 mkdir -p "$RUNTIME_DIR"
 umask 077
 sed \
-  -e "s|__ODOO_ADMIN_PASSWORD__|${ODOO_ADMIN_PASSWORD}|g" \
-  -e "s|__POSTGRES_HOST__|${POSTGRES_HOST}|g" \
+  -e "s|__ODOO_ADMIN_PASSWORD__|${ODOO_ADMIN_PASSWORD_ESCAPED}|g" \
+  -e "s|__POSTGRES_HOST__|${POSTGRES_HOST_ESCAPED}|g" \
   -e "s|__POSTGRES_PORT__|${POSTGRES_PORT}|g" \
-  -e "s|__POSTGRES_USER__|${POSTGRES_USER}|g" \
-  -e "s|__POSTGRES_PASSWORD__|${POSTGRES_PASSWORD}|g" \
-  -e "s|__ODOO_DB__|${ODOO_DB}|g" \
+  -e "s|__POSTGRES_USER__|${POSTGRES_USER_ESCAPED}|g" \
+  -e "s|__POSTGRES_PASSWORD__|${POSTGRES_PASSWORD_ESCAPED}|g" \
+  -e "s|__ODOO_DB__|${ODOO_DB_ESCAPED}|g" \
   "${DEPLOY_DIR}/odoo.conf.template" > "${RUNTIME_DIR}/odoo.conf"
 chmod 600 "${RUNTIME_DIR}/odoo.conf"
