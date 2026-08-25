@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Keep Odoo's hr.employee model and change only the firefighter-facing vocabulary. -->
+        <record id="hr.menu_hr_root" model="ir.ui.menu">
+            <field name="name">Voluntarios</field>
+        </record>
+        <record id="hr.menu_hr_main" model="ir.ui.menu">
+            <field name="name">Gestión de voluntarios</field>
+        </record>
+        <record id="hr.menu_hr_employee_payroll" model="ir.ui.menu">
+            <field name="name">Voluntarios</field>
+        </record>
+        <record id="hr.menu_hr_employee" model="ir.ui.menu">
+            <field name="name">Directorio</field>
+        </record>
+        <record id="hr.menu_config_employee" model="ir.ui.menu">
+            <field name="name">Voluntarios</field>
+        </record>
+
+        <record id="hr.open_view_employee_list_my" model="ir.actions.act_window">
+            <field name="name">Voluntarios</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">Registra el primer voluntario</p>
+                <p>Administra los datos personales e institucionales de los miembros de la estación.</p>
+            </field>
+        </record>
+        <record id="hr.open_view_employee_list" model="ir.actions.act_window">
+            <field name="name">Voluntarios</field>
+        </record>
+
+        <record id="bomberos_hr_employee_form" model="ir.ui.view">
+            <field name="name">bomberos.hr.employee.form</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="attributes">
+                    <attribute name="string">Voluntario</attribute>
+                </xpath>
+                <xpath expr="//field[@name='name']" position="attributes">
+                    <attribute name="placeholder">Nombre del voluntario</attribute>
+                </xpath>
+                <xpath expr="//page[@name='work_information']" position="attributes">
+                    <attribute name="string">Institucional</attribute>
+                </xpath>
+                <xpath expr="//page[@name='resume']" position="attributes">
+                    <attribute name="string">Capacitación y habilidades</attribute>
+                </xpath>
+                <xpath expr="//page[@name='personal_information']" position="attributes">
+                    <attribute name="string">Personal</attribute>
+                </xpath>
+
+                <xpath expr="//page[@name='work_information']//field[@name='department_id']" position="attributes">
+                    <attribute name="string">Sección</attribute>
+                </xpath>
+                <xpath expr="//page[@name='work_information']//field[@name='job_id']" position="attributes">
+                    <attribute name="string">Cargo</attribute>
+                </xpath>
+                <xpath expr="//page[@name='work_information']//field[@name='parent_id']" position="attributes">
+                    <attribute name="string">Responsable</attribute>
+                </xpath>
+
+                <!-- Corporate office/location concepts are not useful for the station profile. -->
+                <xpath expr="//page[@name='work_information']//group[field[@name='address_id']]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+
+                <!-- Replace private contact block to deliberately remove salary/bank-account widgets. -->
+                <xpath expr="//page[@name='personal_information']/group/group[field[@name='private_email']]" position="replace">
+                    <group string="Contacto personal">
+                        <field name="private_email" string="Correo personal"/>
+                        <field name="private_phone" widget="phone" string="Teléfono personal"/>
+                    </group>
+                </xpath>
+
+                <!-- Hide corporate-only personal information. -->
+                <xpath expr="//page[@name='personal_information']//group[field[@name='visa_no']]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="//page[@name='personal_information']//group[@name='hr_family_group']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+
+                <!-- Payroll and HR application settings remain in Odoo but are removed from normal use. -->
+                <xpath expr="//page[@name='payroll_information']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="//page[@name='hr_settings']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="//header/button[@string='Launch Plan']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="bomberos_hr_employee_tree" model="ir.ui.view">
+            <field name="name">bomberos.hr.employee.list</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//list" position="attributes">
+                    <attribute name="string">Voluntarios</attribute>
+                </xpath>
+                <xpath expr="//field[@name='contract_date_start']" position="attributes">
+                    <attribute name="string">Fecha de ingreso</attribute>
+                    <attribute name="optional">show</attribute>
+                </xpath>
+                <xpath expr="//field[@name='department_id']" position="attributes">
+                    <attribute name="string">Sección</attribute>
+                </xpath>
+                <xpath expr="//field[@name='job_id']" position="attributes">
+                    <attribute name="string">Cargo</attribute>
+                </xpath>
+                <xpath expr="//field[@name='parent_id']" position="attributes">
+                    <attribute name="string">Responsable</attribute>
+                </xpath>
+                <xpath expr="//field[@name='contract_date_end'] | //field[@name='wage'] | //field[@name='employee_type'] | //field[@name='contract_type_id'] | //field[@name='structure_type_id']" position="attributes">
+                    <attribute name="column_invisible">1</attribute>
+                </xpath>
+                <xpath expr="//header/button[@string='Launch Plan']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="bomberos_hr_employee_filter" model="ir.ui.view">
+            <field name="name">bomberos.hr.employee.search</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_filter"/>
+            <field name="arch" type="xml">
+                <xpath expr="//search" position="attributes">
+                    <attribute name="string">Voluntarios</attribute>
+                </xpath>
+                <xpath expr="//search/field[@name='name']" position="attributes">
+                    <attribute name="string">Voluntario</attribute>
+                </xpath>
+                <xpath expr="//search/field[@name='department_id']" position="attributes">
+                    <attribute name="string">Sección</attribute>
+                </xpath>
+                <xpath expr="//search/field[@name='parent_id']" position="attributes">
+                    <attribute name="string">Responsable</attribute>
+                </xpath>
+                <xpath expr="//filter[@name='in_contract'] | //filter[@name='out_of_contract'] | //filter[@name='contract_date_start'] | //filter[@name='contract_date_end'] | //filter[@name='group_employee_type']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="//filter[@name='group_department']" position="attributes">
+                    <attribute name="string">Sección</attribute>
+                </xpath>
+                <xpath expr="//filter[@name='group_job']" position="attributes">
+                    <attribute name="string">Cargo</attribute>
+                </xpath>
+                <xpath expr="//filter[@name='group_manager']" position="attributes">
+                    <attribute name="string">Responsable</attribute>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
