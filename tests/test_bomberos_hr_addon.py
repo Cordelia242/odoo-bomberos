@@ -30,6 +30,14 @@ def test_employee_customization_renames_volunteers_and_hides_noise():
     assert "visa_no" in xml
 
 
+def test_employee_customization_keeps_family_information_visible():
+    path = ADDON / "views" / "hr_employee_views.xml"
+    root = ET.parse(path).getroot()
+    xml = ET.tostring(root, encoding="unicode")
+
+    assert "hr_family_group" not in xml
+
+
 def test_department_customization_uses_sections_language():
     path = ADDON / "views" / "hr_department_views.xml"
     root = ET.parse(path).getroot()
@@ -46,4 +54,5 @@ def test_user_facing_documentation_exists():
     assert "bomberos_hr" in doc
     assert "hr.employee" in doc
     assert "Voluntarios" in doc
+    assert "datos familiares" in doc.lower()
     assert "no modifica el core" in doc.lower()
