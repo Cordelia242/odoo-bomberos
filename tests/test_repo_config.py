@@ -46,3 +46,9 @@ def test_external_database_scripts_do_not_reference_compose_db_service():
     assert "exec -T db" not in backup
     assert "POSTGRES_HOST" in deploy
     assert "POSTGRES_HOST" in backup
+
+
+def test_rendered_odoo_config_is_readable_by_container_user():
+    render = (ROOT / "deploy/render-config.sh").read_text()
+    assert 'chmod 700 "$RUNTIME_DIR"' in render
+    assert 'chmod 644 "${RUNTIME_DIR}/odoo.conf"' in render
