@@ -5,8 +5,8 @@ services:
     image: ${ODOO_IMAGE:?ODOO_IMAGE must be set}
     restart: unless-stopped
     environment:
-      HOST: db
-      PORT: "5432"
+      HOST: ${POSTGRES_HOST:?POSTGRES_HOST must be set}
+      PORT: "${POSTGRES_PORT:-5432}"
       USER: ${POSTGRES_USER}
       PASSWORD: ${POSTGRES_PASSWORD}
     ports:
@@ -21,7 +21,7 @@ services:
       retries: 12
       start_period: 30s
     networks:
-      - home-network      
+      - home-network
 
 volumes:
   odoo-data:
