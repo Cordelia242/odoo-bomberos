@@ -10,7 +10,7 @@ def test_production_compose_has_no_addon_bind_mount_or_local_database():
 
     odoo = compose["services"]["odoo"]
     assert odoo["image"] == "${ODOO_IMAGE:?ODOO_IMAGE must be set}"
-    assert odoo["environment"]["HOST"] == "${POSTGRES_HOST}"
+    assert odoo["environment"]["HOST"] == "${POSTGRES_HOST:?POSTGRES_HOST must be set}"
     volumes = "\n".join(odoo.get("volumes", []))
     assert "/mnt/extra-addons" not in volumes
     assert "./addons" not in volumes
