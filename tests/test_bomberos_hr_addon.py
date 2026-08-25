@@ -38,6 +38,14 @@ def test_employee_customization_keeps_family_information_visible():
     assert "hr_family_group" not in xml
 
 
+def test_inherited_views_do_not_select_nodes_by_string_attribute():
+    for path in (ADDON / "views").glob("*.xml"):
+        root = ET.parse(path).getroot()
+        for xpath in root.findall(".//xpath"):
+            expr = xpath.attrib.get("expr", "")
+            assert "@string" not in expr, f"{path}: invalid inherited-view selector: {expr}"
+
+
 def test_department_customization_uses_sections_language():
     path = ADDON / "views" / "hr_department_views.xml"
     root = ET.parse(path).getroot()

@@ -85,7 +85,7 @@
                 <xpath expr="//page[@name='hr_settings']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
-                <xpath expr="//header/button[@string='Launch Plan']" position="attributes">
+                <xpath expr="//header/button[@type='action']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
             </field>
@@ -115,7 +115,7 @@
                 <xpath expr="//field[@name='contract_date_end'] | //field[@name='wage'] | //field[@name='employee_type'] | //field[@name='contract_type_id'] | //field[@name='structure_type_id']" position="attributes">
                     <attribute name="column_invisible">1</attribute>
                 </xpath>
-                <xpath expr="//header/button[@string='Launch Plan']" position="attributes">
+                <xpath expr="//header/button[@type='action']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
             </field>
