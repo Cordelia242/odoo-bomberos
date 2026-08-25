@@ -41,6 +41,7 @@ La primera versión mantiene la información que aporta valor para la estación:
 - documento de identidad y licencia de conducir disponibles en `hr`;
 - dirección personal;
 - contacto de emergencia;
+- **datos familiares y estado familiar**;
 - educación;
 - notas;
 - base de currículum/habilidades para módulos que amplíen esa funcionalidad.
@@ -52,11 +53,12 @@ Se ocultan de la experiencia normal los elementos orientados a una empresa tradi
 - tipos y categorías de contrato;
 - fecha de fin de contrato en el listado;
 - visas y permisos laborales;
-- estado familiar;
 - configuración de aplicaciones de RR. HH.;
 - horarios laborales desde la ficha del voluntario;
 - ubicación/oficina de trabajo;
 - planes de onboarding/offboarding desde las vistas principales.
+
+Los **datos familiares se conservan visibles** porque son información útil para la gestión de voluntarios y situaciones de emergencia.
 
 Ocultar estas funciones **no elimina datos ni cambia los modelos de Odoo**. Si otro módulo las necesita en el futuro, siguen existiendo técnicamente y la personalización se puede revisar.
 
