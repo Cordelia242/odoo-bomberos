@@ -14,39 +14,93 @@ Cada push a `main` publica:
 ghcr.io/<owner>/odoo-bomberos:sha-<commit>
 ```
 
-El workflow se conecta por SSH, crea backup si la base ya existe, instala módulos nuevos, actualiza módulos modificados, levanta la imagen exacta y espera su healthcheck.
+El build se ejecuta en un runner hospedado por GitHub. El despliegue se ejecuta en un **GitHub Actions self-hosted runner dentro de la red local del servidor**, por lo que no es necesario exponer SSH ni ningún puerto de administración a Internet.
 
-## Estructura
+## Arquitectura
 
 ```text
-.github/workflows/       CI y deploy
-addons/                  addons propios/terceros
-docker/Dockerfile        imagen de producción
-deploy/                  compose y scripts del servidor
-scripts/                 validación/detección de módulos
-tests/                   pruebas del repo
+GitHub
+  |
+  | HTTPS saliente
+  v
+self-hosted runner en tu servidor
+  |
+  +--> docker pull de GHCR
+  +--> backup
+  +--> actualización de módulos
+  +--> docker compose up
+
+Odoo ---- home-network ---- PostgreSQL existente
 ```
 
-## Servidor
+## Base de datos
 
-Requisitos: Linux, Docker Engine, Docker Compose v2 y un usuario SSH con acceso a Docker.
+Este repositorio **no despliega PostgreSQL**. Odoo se conecta a tu PostgreSQL existente mediante la red Docker externa:
 
-Primera preparación:
+```text
+home-network
+```
+
+Configura en `/opt/odoo-bomberos/.env`:
+
+```dotenv
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_USER=odoo
+POSTGRES_PASSWORD=tu_password
+ODOO_DB=bomberos
+```
+
+`POSTGRES_HOST` debe ser el nombre del contenedor, alias DNS o hostname con el que PostgreSQL es accesible desde `home-network`.
+
+El deploy usa un contenedor temporal `postgres:17.11-bookworm` únicamente como cliente para `pg_isready`, `psql`, `createdb` y `pg_dump`. No crea un servidor PostgreSQL adicional.
+
+## Preparar el servidor
+
+Requisitos:
+
+- Linux
+- Docker Engine
+- Docker Compose v2
+- `home-network` ya creada
+- PostgreSQL existente accesible desde esa red
+- usuario del runner con permiso para ejecutar Docker sin `sudo`
+
+Prepara la carpeta:
 
 ```bash
 ./deploy/bootstrap-server.sh /opt/odoo-bomberos
 nano /opt/odoo-bomberos/.env
 ```
 
-Si GHCR es privado, autentica Docker una sola vez en el servidor con un PAT que tenga `read:packages`:
+## Instalar el self-hosted runner
+
+En GitHub entra a:
+
+```text
+Repositorio -> Settings -> Actions -> Runners -> New self-hosted runner
+```
+
+Selecciona Linux x64 y ejecuta en tu servidor los comandos que GitHub te muestre.
+
+Cuando ejecutes `config.sh`, añade la etiqueta específica del proyecto:
 
 ```bash
-echo '<PAT>' | docker login ghcr.io -u '<github-user>' --password-stdin
+./config.sh --url https://github.com/Cordelia242/odoo-bomberos --token <TOKEN_TEMPORAL> --labels odoo-bomberos
 ```
+
+Después instálalo como servicio usando los comandos que GitHub muestra para Linux, normalmente:
+
+```bash
+sudo ./svc.sh install
+sudo ./svc.sh start
+```
+
+Comprueba en GitHub que aparezca como `Idle` y con la etiqueta `odoo-bomberos`.
 
 ## GitHub Secrets
 
-Configura, idealmente en el environment `production`:
+Para el despliegue ya **no se necesitan**:
 
 - `SERVER_HOST`
 - `SERVER_PORT`
@@ -54,7 +108,13 @@ Configura, idealmente en el environment `production`:
 - `SERVER_SSH_KEY`
 - `SERVER_KNOWN_HOSTS`
 
-Obtén `SERVER_KNOWN_HOSTS` con `ssh-keyscan`, pero verifica la huella por un canal independiente antes de guardarla.
+El job del self-hosted runner se autentica temporalmente en GHCR con `GITHUB_TOKEN`.
+
+Las credenciales de Odoo y PostgreSQL siguen viviendo solamente en:
+
+```text
+/opt/odoo-bomberos/.env
+```
 
 ## Addons
 
@@ -75,10 +135,7 @@ También puedes ejecutar manualmente el workflow `Deploy production` y forzar `i
 
 ## Persistencia y backups
 
-Persisten fuera de la imagen:
-
-- PostgreSQL
-- `/var/lib/odoo`
+El repositorio solo administra la persistencia de Odoo en `/var/lib/odoo`. PostgreSQL pertenece a tu infraestructura externa.
 
 Antes de migrar una base existente se guarda:
 
@@ -89,9 +146,11 @@ Antes de migrar una base existente se guarda:
 └── image.txt
 ```
 
+El `database.dump` se obtiene conectándose al PostgreSQL externo por `home-network`.
+
 Retención por defecto: 14 días.
 
-Un rollback de imagen no revierte una migración de base de datos; para un rollback completo hay que restaurar también DB y filestore.
+Un rollback de imagen no revierte una migración de base de datos; para un rollback completo hay que restaurar también la DB y el filestore.
 
 ## Red
 
@@ -106,6 +165,6 @@ Pon Caddy, Traefik, Nginx o tu proxy habitual delante. `proxy_mode=True` ya est�
 ## Versiones fijadas
 
 - Odoo `19.0-20260817`
-- PostgreSQL `17.11-bookworm`
+- Cliente PostgreSQL para mantenimiento/backups: `postgres:17.11-bookworm`
 
-Actualízalas por PR; no uses `latest`.
+No uses `latest`; actualiza las versiones mediante un PR.

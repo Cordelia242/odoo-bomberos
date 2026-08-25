@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 DEPLOY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${DEPLOY_DIR}/.env"
 [[ -f "$ENV_FILE" ]] || { echo "Missing ${ENV_FILE}" >&2; exit 1; }
@@ -9,22 +10,37 @@ source "$ENV_FILE"
 set +a
 
 : "${ODOO_IMAGE:?ODOO_IMAGE must be provided by the workflow}"
+: "${POSTGRES_HOST:?required}"
+POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 : "${POSTGRES_USER:?required}"
 : "${POSTGRES_PASSWORD:?required}"
 : "${ODOO_DB:?required}"
 
 INSTALL_MODULES="${INSTALL_MODULES:-}"
 UPDATE_MODULES="${UPDATE_MODULES:-}"
+POSTGRES_CLIENT_IMAGE="${POSTGRES_CLIENT_IMAGE:-postgres:17.11-bookworm}"
+POSTGRES_DOCKER_NETWORK="${POSTGRES_DOCKER_NETWORK:-home-network}"
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f "${DEPLOY_DIR}/compose.prod.yml")
+
+pg_client() {
+  docker run --rm \
+    --network "$POSTGRES_DOCKER_NETWORK" \
+    -e PGPASSWORD="$POSTGRES_PASSWORD" \
+    "$POSTGRES_CLIENT_IMAGE" "$@"
+}
 
 "${DEPLOY_DIR}/render-config.sh"
 "${COMPOSE[@]}" pull
-"${COMPOSE[@]}" up -d db
 
-DB_EXISTS="$("${COMPOSE[@]}" exec -T db psql -U "$POSTGRES_USER" -d postgres -tAc \
+# Verify the external PostgreSQL endpoint is reachable before changing Odoo.
+pg_client pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres
+
+DB_EXISTS="$(pg_client psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -tAc \
   "SELECT 1 FROM pg_database WHERE datname='${ODOO_DB}'" | tr -d '[:space:]')"
 
 if [[ "$DB_EXISTS" != "1" ]]; then
+  echo "Database ${ODOO_DB} does not exist; creating it on external PostgreSQL."
+  pg_client createdb -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" "$ODOO_DB"
   "${COMPOSE[@]}" run --rm odoo \
     odoo -d "$ODOO_DB" -i base --without-demo=all --stop-after-init
 else
