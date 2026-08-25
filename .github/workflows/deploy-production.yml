@@ -90,40 +90,36 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, odoo-bomberos]
     environment: production
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout deployment files
+        uses: actions/checkout@v6
 
-      - name: Configure SSH
-        env:
-          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
+      - name: Login to GHCR for deployment
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install deployment bundle locally
         run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          TARGET=/opt/odoo-bomberos
+          install -d "$TARGET"
+          install -m 0644 deploy/compose.prod.yml "$TARGET/compose.prod.yml"
+          install -m 0644 deploy/odoo.conf.template "$TARGET/odoo.conf.template"
+          install -m 0644 deploy/.env.server.example "$TARGET/.env.server.example"
+          install -m 0755 deploy/render-config.sh "$TARGET/render-config.sh"
+          install -m 0755 deploy/backup.sh "$TARGET/backup.sh"
+          install -m 0755 deploy/deploy.sh "$TARGET/deploy.sh"
+          install -m 0755 deploy/bootstrap-server.sh "$TARGET/bootstrap-server.sh"
 
-      - name: Copy deployment bundle
+      - name: Deploy exact image locally
         env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_PORT: ${{ secrets.SERVER_PORT }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-        run: |
-          tar --exclude='deploy/.env' --exclude='deploy/runtime' --exclude='deploy/backups' -czf - deploy | \
-          ssh -p "${SERVER_PORT:-22}" "${SERVER_USER}@${SERVER_HOST}" \
-          'mkdir -p /opt/odoo-bomberos && tar xzf - -C /opt/odoo-bomberos --strip-components=1'
-
-      - name: Deploy exact image
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_PORT: ${{ secrets.SERVER_PORT }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
           ODOO_IMAGE: ${{ needs.build.outputs.image }}
           INSTALL_MODULES: ${{ needs.build.outputs.install_modules }}
           UPDATE_MODULES: ${{ needs.build.outputs.update_modules }}
         run: |
-          ssh -p "${SERVER_PORT:-22}" "${SERVER_USER}@${SERVER_HOST}" \
-          "cd /opt/odoo-bomberos && ODOO_IMAGE='${ODOO_IMAGE}' INSTALL_MODULES='${INSTALL_MODULES}' UPDATE_MODULES='${UPDATE_MODULES}' ./deploy.sh"
+          cd /opt/odoo-bomberos
+          ./deploy.sh
