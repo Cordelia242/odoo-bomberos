@@ -73,11 +73,8 @@
                     </group>
                 </xpath>
 
-                <!-- Hide corporate-only personal information. -->
+                <!-- Hide corporate-only personal information. Family data remains visible because it is useful to the station. -->
                 <xpath expr="//page[@name='personal_information']//group[field[@name='visa_no']]" position="attributes">
-                    <attribute name="invisible">1</attribute>
-                </xpath>
-                <xpath expr="//page[@name='personal_information']//group[@name='hr_family_group']" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </xpath>
 
