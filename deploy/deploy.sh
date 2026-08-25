@@ -41,10 +41,19 @@ DB_EXISTS="$(pg_client psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRE
 if [[ "$DB_EXISTS" != "1" ]]; then
   echo "Database ${ODOO_DB} does not exist; creating it on external PostgreSQL."
   pg_client createdb -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" "$ODOO_DB"
-  "${COMPOSE[@]}" run --rm odoo \
-    odoo -d "$ODOO_DB" -i base --without-demo=all --stop-after-init
 else
   "${DEPLOY_DIR}/backup.sh"
+fi
+
+# A PostgreSQL database can exist without having been initialized by Odoo.
+# Detect the core Odoo table instead of treating database existence as enough.
+ODOO_INITIALIZED="$(pg_client psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$ODOO_DB" -tAc \
+  "SELECT CASE WHEN to_regclass('public.ir_module_module') IS NOT NULL THEN 1 ELSE 0 END" | tr -d '[:space:]')"
+
+if [[ "$ODOO_INITIALIZED" != "1" ]]; then
+  echo "Database ${ODOO_DB} exists but is not initialized by Odoo; installing base."
+  "${COMPOSE[@]}" run --rm odoo \
+    odoo -d "$ODOO_DB" -i base --without-demo=all --stop-after-init
 fi
 
 if [[ -n "$INSTALL_MODULES" ]]; then
