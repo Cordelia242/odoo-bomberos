@@ -32,6 +32,7 @@ POSTGRES_PASSWORD_ESCAPED="$(sed_escape "$POSTGRES_PASSWORD")"
 ODOO_DB_ESCAPED="$(sed_escape "$ODOO_DB")"
 
 mkdir -p "$RUNTIME_DIR"
+chmod 700 "$RUNTIME_DIR"
 umask 077
 sed \
   -e "s|__ODOO_ADMIN_PASSWORD__|${ODOO_ADMIN_PASSWORD_ESCAPED}|g" \
@@ -41,4 +42,8 @@ sed \
   -e "s|__POSTGRES_PASSWORD__|${POSTGRES_PASSWORD_ESCAPED}|g" \
   -e "s|__ODOO_DB__|${ODOO_DB_ESCAPED}|g" \
   "${DEPLOY_DIR}/odoo.conf.template" > "${RUNTIME_DIR}/odoo.conf"
-chmod 600 "${RUNTIME_DIR}/odoo.conf"
+
+# The bind-mounted file must be readable by the non-root `odoo` user inside
+# the container. The parent directory remains 0700 on the host so other local
+# users cannot traverse to the config file.
+chmod 644 "${RUNTIME_DIR}/odoo.conf"
