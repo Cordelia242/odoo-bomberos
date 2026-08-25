@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="hr.hr_department_kanban_action" model="ir.actions.act_window">
+            <field name="name">Secciones</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">Crea una sección de la estación</p>
+                <p>Organiza a los voluntarios por secciones operativas o administrativas.</p>
+            </field>
+        </record>
+        <record id="hr.hr_department_tree_action" model="ir.actions.act_window">
+            <field name="name">Secciones</field>
+        </record>
+
+        <record id="bomberos_hr_department_form" model="ir.ui.view">
+            <field name="name">bomberos.hr.department.form</field>
+            <field name="model">hr.department</field>
+            <field name="inherit_id" ref="hr.view_department_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="attributes">
+                    <attribute name="string">Sección</attribute>
+                </xpath>
+                <xpath expr="//field[@name='total_employee']" position="attributes">
+                    <attribute name="string">Voluntarios</attribute>
+                </xpath>
+                <xpath expr="//field[@name='manager_id']" position="attributes">
+                    <attribute name="string">Responsable</attribute>
+                </xpath>
+                <xpath expr="//field[@name='parent_id']" position="attributes">
+                    <attribute name="string">Sección superior</attribute>
+                </xpath>
+                <xpath expr="//button[@name='action_plan_from_department']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="bomberos_hr_department_tree" model="ir.ui.view">
+            <field name="name">bomberos.hr.department.list</field>
+            <field name="model">hr.department</field>
+            <field name="inherit_id" ref="hr.view_department_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//list" position="attributes">
+                    <attribute name="string">Secciones</attribute>
+                </xpath>
+                <xpath expr="//field[@name='manager_id']" position="attributes">
+                    <attribute name="string">Responsable</attribute>
+                </xpath>
+                <xpath expr="//field[@name='total_employee']" position="attributes">
+                    <attribute name="string">Voluntarios</attribute>
+                </xpath>
+                <xpath expr="//field[@name='parent_id']" position="attributes">
+                    <attribute name="string">Sección superior</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="bomberos_hr_department_filter" model="ir.ui.view">
+            <field name="name">bomberos.hr.department.search</field>
+            <field name="model">hr.department</field>
+            <field name="inherit_id" ref="hr.view_department_filter"/>
+            <field name="arch" type="xml">
+                <xpath expr="//search" position="attributes">
+                    <attribute name="string">Secciones</attribute>
+                </xpath>
+                <xpath expr="//field[@name='name']" position="attributes">
+                    <attribute name="string">Sección</attribute>
+                </xpath>
+                <xpath expr="//field[@name='manager_id']" position="attributes">
+                    <attribute name="string">Responsable</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="bomberos_hr_department_kanban" model="ir.ui.view">
+            <field name="name">bomberos.hr.department.kanban</field>
+            <field name="model">hr.department</field>
+            <field name="inherit_id" ref="hr.hr_department_view_kanban"/>
+            <field name="arch" type="xml">
+                <xpath expr="//a[@name='action_employee_from_department']" position="replace">
+                    <a name="action_employee_from_department" type="object">Voluntarios</a>
+                </xpath>
+                <xpath expr="//a[@name='action_open_view_child_departments']" position="replace">
+                    <a name="action_open_view_child_departments" type="object">Subsecciones</a>
+                </xpath>
+                <xpath expr="//button[@name='action_employee_from_department']" position="replace">
+                    <button class="btn btn-primary" name="action_employee_from_department" type="object">
+                        <field name="total_employee"/> Voluntarios
+                    </button>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
