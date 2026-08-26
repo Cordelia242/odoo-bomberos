@@ -1,0 +1,35 @@
+# Translation of Odoo Server.
+# Bolivian Spanish firefighter-facing HR vocabulary.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Language: es_BO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. module: bomberos_hr
+#: model:ir.ui.menu,name:hr.menu_hr_root
+#: model:ir.ui.menu,name:hr.menu_hr_employee_payroll
+#: model:ir.ui.menu,name:hr.menu_config_employee
+#: model:ir.actions.act_window,name:hr.open_view_employee_list_my
+#: model:ir.actions.act_window,name:hr.open_view_employee_list
+msgid "Voluntarios"
+msgstr "Voluntarios"
+
+#. module: bomberos_hr
+#: model:ir.ui.menu,name:hr.menu_hr_employee
+msgid "Directorio"
+msgstr "Directorio"
+
+#. module: bomberos_hr
+#: model:ir.ui.menu,name:hr.menu_hr_department_kanban
+#: model:ir.actions.act_window,name:hr.hr_department_kanban_action
+#: model:ir.actions.act_window,name:hr.hr_department_tree_action
+msgid "Secciones"
+msgstr "Secciones"
+
+#. module: bomberos_hr
+#: model:ir.ui.menu,name:hr.menu_hr_main
+msgid "Gestión de voluntarios"
+msgstr "Gestión de voluntarios"

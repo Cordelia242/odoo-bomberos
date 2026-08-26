@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <record id="hr.menu_hr_department_kanban" model="ir.ui.menu">
+            <field name="name">Secciones</field>
+        </record>
         <record id="hr.hr_department_kanban_action" model="ir.actions.act_window">
             <field name="name">Secciones</field>
             <field name="help" type="html">

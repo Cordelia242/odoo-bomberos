@@ -40,6 +40,21 @@
                 <xpath expr="//field[@name='name']" position="attributes">
                     <attribute name="placeholder">Nombre del voluntario</attribute>
                 </xpath>
+                <xpath expr="//field[@name='work_email']" position="attributes">
+                    <attribute name="string">Correo institucional</attribute>
+                    <attribute name="placeholder">correo@estacion.org</attribute>
+                </xpath>
+                <xpath expr="//field[@name='work_phone']" position="attributes">
+                    <attribute name="string">Teléfono institucional</attribute>
+                    <attribute name="placeholder">Teléfono institucional</attribute>
+                </xpath>
+                <xpath expr="//field[@name='mobile_phone']" position="attributes">
+                    <attribute name="string">Celular institucional</attribute>
+                    <attribute name="placeholder">Celular institucional</attribute>
+                </xpath>
+                <xpath expr="//field[@name='category_ids']" position="attributes">
+                    <attribute name="placeholder">p. ej. Conductor, Rescate, Operaciones, ...</attribute>
+                </xpath>
                 <xpath expr="//page[@name='work_information']" position="attributes">
                     <attribute name="string">Institucional</attribute>
                 </xpath>
@@ -50,14 +65,24 @@
                     <attribute name="string">Personal</attribute>
                 </xpath>
 
+                <xpath expr="//page[@name='work_information']//group[field[@name='department_id']]" position="attributes">
+                    <attribute name="string">DATOS INSTITUCIONALES</attribute>
+                </xpath>
                 <xpath expr="//page[@name='work_information']//field[@name='department_id']" position="attributes">
                     <attribute name="string">Sección</attribute>
                 </xpath>
                 <xpath expr="//page[@name='work_information']//field[@name='job_id']" position="attributes">
                     <attribute name="string">Cargo</attribute>
+                    <attribute name="placeholder">p. ej. Jefe de guardia</attribute>
+                </xpath>
+                <xpath expr="//page[@name='work_information']//field[@name='job_title']" position="attributes">
+                    <attribute name="string">Nombre del cargo / función</attribute>
                 </xpath>
                 <xpath expr="//page[@name='work_information']//field[@name='parent_id']" position="attributes">
                     <attribute name="string">Responsable</attribute>
+                </xpath>
+                <xpath expr="//page[@name='work_information']//field[@name='additional_note']" position="attributes">
+                    <attribute name="placeholder">Proporciona información adicional sobre este voluntario...</attribute>
                 </xpath>
 
                 <!-- Corporate office/location concepts are not useful for the station profile. -->
