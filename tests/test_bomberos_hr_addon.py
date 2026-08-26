@@ -57,6 +57,24 @@ def test_department_customization_uses_sections_language():
     assert "hr.view_department_filter" in xml
 
 
+def test_spanish_vocabulary_overrides_employee_and_department_terms():
+    for language in ("es", "es_BO"):
+        po = (ADDON / "i18n" / f"{language}.po").read_text()
+        assert "Voluntarios" in po
+        assert "Secciones" in po
+        assert "Directorio" in po
+
+
+def test_employee_form_replaces_corporate_labels_and_examples():
+    xml = (ADDON / "views" / "hr_employee_views.xml").read_text()
+    assert "DATOS INSTITUCIONALES" in xml
+    assert "Teléfono institucional" in xml
+    assert "Celular institucional" in xml
+    assert "Nombre del cargo / función" in xml
+    assert "Gerente de ventas" not in xml
+    assert "Fundador" not in xml
+
+
 def test_user_facing_documentation_exists():
     doc = (ROOT / "docs" / "bomberos_hr.md").read_text()
     assert "bomberos_hr" in doc
